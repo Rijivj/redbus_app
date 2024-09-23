@@ -1,25 +1,29 @@
 import React, { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./css/busResults.css";
+import BookingForm from "../componets/bokkingForm";
 
 const BusResults = () => {
-  const location = useLocation(); // To get the query params from URL
+  const location = useLocation();
+  const navigate = useNavigate();
   const [busResults, setBusResults] = useState([]);
   const [filteredResults, setFilteredResults] = useState([]);
   const [filter, setFilter] = useState({ type: "", price: "" });
   const [loading, setLoading] = useState(true);
+  const [selectedBus, setSelectedBus] = useState(null);
+  const [showSeats, setShowSeats] = useState(false);
 
-  // Parse query parameters
   const searchParams = new URLSearchParams(location.search);
   const from = searchParams.get("from");
   const to = searchParams.get("to");
   const date = searchParams.get("date");
 
-  // Fetch buses from the API based on the search criteria
   useEffect(() => {
     axios
-      .get(`/api/bus/search?from=${from}&to=${to}&date=${date}`)
+      .get(
+        `http://localhost:5000/api/bus/search?from=${from}&to=${to}&date=${date}`
+      )
       .then((response) => {
         setBusResults(response.data);
         setFilteredResults(response.data);
@@ -31,13 +35,11 @@ const BusResults = () => {
       });
   }, [from, to, date]);
 
-  // Handle filter changes
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
     setFilter({ ...filter, [name]: value });
   };
 
-  // Apply filters
   useEffect(() => {
     let results = busResults;
 
@@ -52,6 +54,11 @@ const BusResults = () => {
     setFilteredResults(results);
   }, [filter, busResults]);
 
+  const handleViewSeats = (bus) => {
+    setSelectedBus(bus);
+    setShowSeats(!showSeats);
+  };
+
   if (loading) {
     return <div className="loading-message">Loading buses...</div>;
   }
@@ -62,7 +69,6 @@ const BusResults = () => {
         Bus Results for {from} to {to} on {date}
       </h1>
 
-      {/* Filters */}
       <div className="filters">
         <label>
           Bus Type:
@@ -85,25 +91,38 @@ const BusResults = () => {
         </label>
       </div>
 
-      {/* Display bus results */}
       <div className="bus-results">
         {filteredResults.length > 0 ? (
           filteredResults.map((bus, index) => (
             <div key={index} className="bus-card">
               <h2>{bus.busName}</h2>
-              <p>From: {bus.from}</p>
-              <p>To: {bus.to}</p>
+              <p>From: {bus.fromCity}</p>
+              <p>To: {bus.toCity}</p>
               <p>Date: {bus.date}</p>
               <p>Type: {bus.type}</p>
               <p>Price: ₹{bus.price}</p>
+              <button onClick={() => handleViewSeats(bus)}>
+                {showSeats && selectedBus === bus ? "Hide Seats" : "View Seats"}
+              </button>
+              {showSeats && selectedBus === bus && (
+                <div className="seat-selection">
+                  {/* Placeholder for seat selection UI */}
+                  <p>Select your seats for {bus.busName}</p>
+                  <BookingForm busId={bus.id} />
+                </div>
+              )}
             </div>
           ))
         ) : (
           <p className="no-results-message">
-            No buses found for the selected criteria.s
+            No buses found for the selected criteria.
           </p>
         )}
       </div>
+
+      <button className="back-button" onClick={() => navigate(-1)}>
+        Back
+      </button>
     </div>
   );
 };
