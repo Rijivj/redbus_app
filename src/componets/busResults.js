@@ -100,7 +100,7 @@ const BusResults = () => {
           ))
         ) : (
           <p className="no-results-message">
-            No buses found for the selected criteria.
+            No buses found for the selected criteria.s
           </p>
         )}
       </div>
